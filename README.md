@@ -6,8 +6,6 @@ A technical Indicators package written in dart
 
 # Installation
 
-## Dart SDK > 2.12 (null safety)
-
 ``` yaml
 dependencies:
   technical_indicators:
