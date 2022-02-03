@@ -11,7 +11,6 @@ that "indicator forest" as quote data is fed into it.
 
 # Installation
 
-
 ``` yaml
 dependencies:
   technical_indicators:
