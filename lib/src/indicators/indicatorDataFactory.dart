@@ -1,108 +1,44 @@
-import 'interfaceIndicators/ohlc.dart';
 import 'indicatorData.dart';
-import 'ema.dart';
-import 'heikenAshi.dart';
-import 'sma.dart';
-import 'stochastic.dart';
-class IndicatorDataFactory<D extends IndicatorData,P extends IndicatorData>{
-    final Map<String,dynamic> specs;
-    IndicatorDataFactory(this.specs);
-    D update(List<D> list,List<P> parentList){
-        switch(D){
-            case HeikenAshi:
-                return getHeikenAshi((parentList.last as OHLC),list.last as HeikenAshi) as D;
-            case EMA:
-                List<dynamic> dynamicList = parentList;
-                double recentValue = 0;
-                switch(P){
-                    case OHLC:
-                    case HeikenAshi:
-                        recentValue = dynamicList.last.c;
-                        break;
-                    case Stochastic:
-                    case EMA:
-                        recentValue = dynamicList.last.value;
-                        break;
-                    default:
-                        throw "$D $P wrongType";
-                }
-                return getEMA((list.last as EMA),recentValue,specs['period']) as D;
-             case SMA:
-                switch(P){
-                    case OHLC:
-                    case HeikenAshi:
-                    case Stochastic:
-                    case SMA:
-                    case EMA:
-                        var values = <double>[];
-                        List<dynamic> casted = parentList;
-                        var start = casted.length-(specs['period'] as int); 
-                        if(P==OHLC || P==HeikenAshi) for(int i=start;i<casted.length;i++) values.add(casted[i].c);
-                        else for(int i=start;i<casted.length;i++) values.add(casted[i].value);
-                        return getSMA(values) as D;
-                    default:
-                        throw "$D $P wrongType";
-                }
-            case Stochastic:
-                switch(P){
-                    case OHLC:
-                    case HeikenAshi:
-                        return getStochastic(parentList,specs['period']) as D;
-                    default:
-                        throw "$D $P wrongType";
-                }
-            default:
-                throw "$D wrongType";
-        }
-    }
-    List<D> convert(List<P> parentList){
-        switch(D){
-            case EMA:
-                var values = <double>[];
-                switch(P){
-                    case OHLC:
-                    case HeikenAshi:
-                        for(var x in (parentList as List<dynamic>)) values.add(x.c);
-                        break;
-                    case Stochastic:
-                        for(var x in (parentList as List<dynamic>)) values.add(x.value);
-                        break;
-                    default:
-                        throw "$D $P wrongType";
-                }
-                return getEMAList(values,specs['period']).cast<D>();
-            case Stochastic:
-                switch(P){
-                    case OHLC:
-                    case HeikenAshi:
-                        return getStochasticList(parentList as List<dynamic>,specs['period']).cast<D>();
-                    default:
-                        throw "$D $P wrongType";
-                }
-            case SMA:
-                switch(P){
-                    case OHLC:
-                    case HeikenAshi:
-                    case Stochastic:
-                    case SMA:
-                    case EMA:
-                        var values = <double>[];
-                        List<dynamic> casted = parentList;
-                        if(P==OHLC || P==HeikenAshi) for(int i=0;i<casted.length;i++) values.add(casted[i].c);
-                        else for(int i=0;i<casted.length;i++) values.add(casted[i].value);
-                        return getSMAList(values,specs['period']).cast<D>();
-                    default:
-                        throw "$D $P wrongType";
-                }
-            case HeikenAshi:
-                switch(P){
-                        case OHLC:
-                            return getHeikenAshiList(parentList.cast<OHLC>()).cast<D>();
-                        default:
-                            throw "$D $P wrongType";
-                }
-            default:
-                throw "$D $P wrongType";
-        }
-    }
+import 'ohlc/candle.dart';
+import 'ohlc/heikenAshi.dart';
+import 'ohlc/ohlc.dart';
+import 'singleValued/ema.dart';
+import 'singleValued/sma.dart';
+import 'singleValued/stochastic.dart';
+import 'singleValued/singleValued.dart';
+
+D update<D extends IndicatorData,P extends IndicatorData>(List<D> list,List<P> parentList,Map<String,dynamic> specs){
+    var p = parentList.last;
+    if(D == HeikenAshi) return getHeikenAshi((parentList.last as OHLC),list.last as OHLC) as D;
+    else if(D == EMA){
+        late double recentValue;
+        if(p is OHLC) recentValue = (p as OHLC).c;
+        else if(p is SingleValued) recentValue = (p as SingleValued).value;
+        return getEMA((list.last as EMA),recentValue,specs['period']) as D;
+    }else if(D == SMA){
+        late List<double> values;
+        var lastFew = parentList.sublist(parentList.length-(specs['period'] as int),parentList.length);
+        if(p is OHLC) values = lastFew.cast<OHLC>().map((e)=>e.c).toList();
+        else if(p is SingleValued) values = lastFew.cast<SingleValued>().map((i)=>i.value).toList();
+        return getSMA(values) as D;
+    }else if(D == Stochastic){
+        return getStochastic(parentList.cast<OHLC>(),specs['period']) as D;
+    }else throw 'immpossible';
+}
+List<D> convert<D extends IndicatorData,P extends IndicatorData>(List<P> parentList,Map<String,dynamic> specs){
+    var p = parentList.last;
+    if(D == HeikenAshi) return getHeikenAshiList(parentList.cast<OHLC>()) as List<D>;
+    else if(D == EMA){
+        late List<double> values;
+        if(p is OHLC) values = parentList.cast<OHLC>().map((e)=>e.c).toList();
+        else if(p is SingleValued) values = parentList.cast<SingleValued>().map((i)=>i.value).toList();
+        return getEMAList(values,specs['period']) as List<D>;
+    }else if(D == SMA){
+        late List<double> values;
+        if(p is OHLC) values = parentList.cast<OHLC>().map((e)=>e.c).toList();
+        else if(p is SingleValued) values = parentList.cast<SingleValued>().map((i)=>i.value).toList();
+        return getSMAList(values,specs['period']) as List<D>;
+    }else if(D == Stochastic){
+        return getStochasticList(parentList.cast<OHLC>(),specs['period']) as List<D>; 
+    }else throw 'impossible';
 }
