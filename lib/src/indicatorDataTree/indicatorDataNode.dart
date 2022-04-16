@@ -1,31 +1,24 @@
-import '../indicators/indicatorDataFactory.dart' as dataFactory;
-import '../indicators/indicatorData.dart';
 
+part of 'indicatorDataTree.dart';
 class IndicatorDataNode<D extends IndicatorData,P extends IndicatorData>{
     final Map<String,dynamic> specs;
     final List<IndicatorDataNode> children;
-    late List<D> values;
+    late List<D> dataList;
     IndicatorDataNode(this.specs,this.children);
-    fill(List<P> parentValues){
-        values = dataFactory.convert<D,P>(parentValues,specs);
+    _fill(List<P> parentValues){
+        dataList = dataFactory.convert<D,P>(parentValues,specs);
         for(var x in children){
-            x.fill(values);
+            x._fill(dataList);
         }
     }
-    updateCurrent(List<P> parentValues){
-        values.last = dataFactory.update<D,P>(values.sublist(0,values.length-1),parentValues,specs);
+    _updateCurrent(List<P> parentValues){
+        dataList.last = dataFactory.update<D,P>(dataList.sublist(0,dataList.length-1),parentValues,specs);
         for(var x in children)
-            x.updateCurrent(values);
+            x._updateCurrent(dataList);
     }
-    addNew(List<P> parentValues){
-        values.add(dataFactory.update<D,P>(values,parentValues,specs));
+    _addNew(List<P> parentValues){
+        dataList.add(dataFactory.update<D,P>(dataList,parentValues,specs));
         for(var x in children)
-            x.addNew(values);
+            x._addNew(dataList);
     }
-    // String toString(){
-    //     var sl = values.length -2;
-    //     var s = '${values[sl]}\n';
-    //     for(var x in children) s+= '$x\n';
-    //     return s;
-    // }
 }

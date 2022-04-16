@@ -2,12 +2,7 @@
 # Technical Indicators
 
 A technical Indicators package written in dart.
-there are two main things this package does... it creates a "indicator forest" and it updates
-that "indicator forest" as quote data is fed into it.
-
-
-
-
+there are two main things this package does... it creates an "indicator tree" and it updates that "indicator tree" as quote data is fed into it.
 
 # Installation
 
@@ -21,20 +16,24 @@ dependencies:
 ``` dart
 import 'package:technical_indicators/techincal_indicators.dart';
 ```
-
 # usage
 ``` dart
 var specTree = IndicatorSpecTree<Candle>(
-  interval:15,
-  children:[
-      IndicatorSpecNode<EMA>({'period':5},[
-        IndicatorSpecNode<SMA>({'period':2},[])
-      ])
-  ]
-);
-var dataTree = specTree.build(historicalData);
-print(dataTree.children[0].values)//EMA values from Candles
-print(dataTree.children[0].children[0].values) //SMA values from EMA
-
-dataTree.update(Event(DateTime.now(),5.34)); //respective quote data is fed
+            5,
+            [
+                IndicatorSpecNode<HeikenAshi>({},[
+                    IndicatorSpecNode<EMA>({'period':10},[]),
+                    IndicatorSpecNode<Stochastic>({'period':10},[
+                        IndicatorSpecNode<SMA>({'period':3},[
+                            IndicatorSpecNode<SMA>({'period':3},[])
+                        ])
+                    ])
+                ])
+            ]
+        );
+        var dataTree = specTree.build(historicalData);
+        print(dataTree.children[0].children[0].dataList);
+        print(dataTree.children[0].children[1].dataList);
+        print(dataTree.children[0].children[1].children[0].dataList);
+        print(dataTree.children[0].children[1].children[0].children[0].dataList);
 ```

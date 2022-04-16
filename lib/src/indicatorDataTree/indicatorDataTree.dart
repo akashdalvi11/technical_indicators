@@ -1,8 +1,10 @@
 import '../indicators/interfaceIndicatorData.dart';
 import '../indicators/ohlc/candle.dart';
-import 'indicatorDataNode.dart';
+import '../indicators/indicatorDataFactory.dart' as dataFactory;
+import '../indicators/indicatorData.dart';
 import 'event.dart';
-DateTime edgedDateTime(int interval,DateTime datetime){
+part 'indicatorDataNode.dart';
+DateTime _edgedDateTime(int interval,DateTime datetime){
         return datetime.subtract(Duration(
             minutes:datetime.minute % interval,
             milliseconds: datetime.millisecond,
@@ -11,44 +13,37 @@ DateTime edgedDateTime(int interval,DateTime datetime){
 }
 class IndicatorDataTree<D extends InterfaceIndicatorData>{
     final int interval;
-    final List<DateTime> dateTimeValues;
+    final List<DateTime> dateTimeList;
     final List<IndicatorDataNode> children;
-    late List<D> interfaceValues;
-    IndicatorDataTree(this.interval,this.dateTimeValues,this.children);
+    late List<D> dataList;
+    IndicatorDataTree(this.interval,this.dateTimeList,this.children);
     bool update(Event e){
-        var dateTime = edgedDateTime(interval,e.dateTime);
-        if(dateTime == dateTimeValues.last){
-            updateCurrent(e.value);
+        var dateTime = _edgedDateTime(interval,e.dateTime);
+        if(dateTime == dateTimeList.last){
+            _updateCurrent(e.value);
             return false;
         }else{
-            dateTimeValues.add(dateTime);
-            addNew(e.value);
+            dateTimeList.add(dateTime);
+            _addNew(e.value);
             return true;
         }
     }
-    fill(List<D> interfaceValues){
-        this.interfaceValues = interfaceValues;
+    fill(List<D> dataList){
+        this.dataList = dataList;
         for(var x in children){
-            x.fill(interfaceValues);
+            x._fill(dataList);
         }
     }
-    updateCurrent(double data){
+    _updateCurrent(double data){
         late InterfaceIndicatorData updated;
-        if(D == Candle) updated = candleUpdated(interfaceValues.last as Candle,data);
-        interfaceValues.last = updated as D;
-        for(var x in children) x.updateCurrent(interfaceValues);
+        if(D == Candle) updated = candleUpdated(dataList.last as Candle,data);
+        dataList.last = updated as D;
+        for(var x in children) x._updateCurrent(dataList);
     }
-    addNew(double data){
+    _addNew(double data){
         late InterfaceIndicatorData justFormed;
         if(D == Candle) justFormed = candleJustFormed(data);
-        interfaceValues.add(justFormed as D);
-        for(var x in children) x.addNew(interfaceValues);
+        dataList.add(justFormed as D);
+        for(var x in children) x._addNew(dataList);
     }
-    
-    // String toString(){
-    //     var sl = list.length -2;
-    //     var s = '${list[sl]}\n';
-    //     for(var x in children) s+= '$x\n';
-    //     return s;
-    // }
 }

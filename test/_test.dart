@@ -1,35 +1,50 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:test/test.dart';
+import 'package:kite_connect/kite_connect.dart' as kc;
+import 'package:dartz/dartz.dart';
 import 'package:technical_indicators/technical_indicators.dart';
 void main(){
     late HistoricalData<Candle> historicalData;
+    late kc.KiteConnect k;
     setUp(() async{
-        var s = await File('./test/testData.json').readAsString();
-        var parsed = json.decode(s);
-        var candles = parsed['data']['candles'];
-        List<DateTime> dateTimes = [];
-        List<Candle> ohlcs = [];
-        double intToDouble(dynamic t){
-            if(t is double) return t;
-            else return t.toDouble();
-        }
-        for(var candle in candles){
-            dateTimes.add(DateTime.parse(candle[0]));
-            ohlcs.add(Candle(intToDouble(candle[1]),intToDouble(candle[2]),intToDouble(candle[3]),intToDouble(candle[4])));
-        }
-        historicalData = HistoricalData<Candle>(dateTimes,ohlcs);
+        var e = Platform.environment;
+        var result = await kc.KiteConnect.create(e['userName']!,e['password']!,e['twoFA']!,'./test');
+        result.fold(
+            (l){
+            throw l;
+            },(r){
+            k = r;
+            }
+        );
+        var data = await k.getHistoricalData("NIFTY BANK",5,
+        DateTime.parse('2022-03-30'),DateTime.parse('2022-04-01'));
+        data.fold(
+            (l){print(l);},
+            (r){
+                historicalData = HistoricalData.createOHLC(r.dateTimeList,r.ohlcList);
+            }
+        );
     });
-    test('ema demo',(){
+    test('demo',(){
+        print(historicalData.dataList);
         var specTree = IndicatorSpecTree<Candle>(
-            interval:15,
-            children:[
-                IndicatorSpecNode<EMA>({'period':5},[
-                    IndicatorSpecNode<SMA>({'period':2},[])
+            5,
+            [
+                IndicatorSpecNode<HeikenAshi>({},[
+                    IndicatorSpecNode<EMA>({'period':10},[]),
+                    IndicatorSpecNode<Stochastic>({'period':10},[
+                        IndicatorSpecNode<SMA>({'period':3},[
+                            IndicatorSpecNode<SMA>({'period':3},[])
+                        ])
+                    ])
                 ])
             ]
         );
         var dataTree = specTree.build(historicalData);
-        print(dataTree.children[0].values);
+        print(dataTree.children[0].children[0].dataList);
+        print(dataTree.children[0].children[1].dataList);
+        print(dataTree.children[0].children[1].children[0].dataList);
+        print(dataTree.children[0].children[1].children[0].children[0].dataList);
     });
 }

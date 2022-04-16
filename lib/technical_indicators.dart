@@ -9,6 +9,5 @@ export 'src/indicators/singleValued/stochastic.dart';
 export 'src/indicatorSpecTree/indicatorSpecNode.dart';
 export 'src/indicatorSpecTree/indicatorSpecTree.dart';
 export 'src/indicatorSpecTree/historicalData.dart';
-export 'src/indicatorDataTree/indicatorDataNode.dart';
 export 'src/indicatorDataTree/indicatorDataTree.dart';
 export 'src/indicatorDataTree/event.dart';

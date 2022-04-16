@@ -1,5 +1,5 @@
 import '../indicators/indicatorData.dart';
-import '../indicatorDataTree/indicatorDataNode.dart';
+import '../indicatorDataTree/indicatorDataTree.dart';
 class IndicatorSpecNode<D extends IndicatorData>{
     final Map<String,dynamic> specs;
     final List<IndicatorSpecNode> children;
